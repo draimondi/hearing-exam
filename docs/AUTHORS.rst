@@ -1,7 +1,7 @@
 Authors
 =======
 
-* Joao M. C. Teixeira (`webpage`_, `github`_)
+* Domenico Raimondi (`webpage`_, `github`_)
 
-.. _webpage: https://bit.ly/joaomcteixeira
-.. _github: https://github.com/joaomcteixeira
+.. _webpage: https://www.linkedin.com/in/domenico-raimondi-b8b4513/
+.. _github: https://github.com/draimondi

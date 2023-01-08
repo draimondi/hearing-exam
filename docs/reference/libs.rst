@@ -1,13 +1,6 @@
 Libs
 ====
 
-.. automodule:: sampleproject.libs
-    :members:
-    :undoc-members:
-
-Something
----------
-
-.. automodule:: sampleproject.libs.samplemodule
+.. automodule:: exam
     :members:
     :undoc-members:
