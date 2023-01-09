@@ -8,7 +8,7 @@
             "name": "Hearing Exam",
             "type": "python",
             "request": "launch",
-            "program": "src\\exam\\__main__.py",
+            "program": "exam\\main.py",
             "console": "integratedTerminal",
 //            "justMyCode": true
         }

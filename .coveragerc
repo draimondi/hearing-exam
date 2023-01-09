@@ -1,12 +1,12 @@
 [paths]
 source =
-    src
+    exam
     */site-packages
 
 [run]
 branch = true
 source =
-    hearing_exam
+    exam
 parallel = true
 
 [report]

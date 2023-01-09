@@ -8,7 +8,7 @@ Contains:
 import threading
 import time
 import numpy as np
-import pygame
+import pyaudio
 
 class ToneThread(threading.Thread):
     """This class instantiates a thread which, when run, plays a sine wave audio tone."""
@@ -16,12 +16,30 @@ class ToneThread(threading.Thread):
     LEFT_CHANNEL = "left"
     RIGHT_CHANNEL = "right"
     BITS = 16
-    TONE_ARRAY_TYPE = np.int16
+    TONE_ARRAY_TYPE = np.float32
     DEFAULT_SAMPLE_RATE =  44100 # sample rate: frames/samples per second. Hz, must be integer
     DEFAULT_FREQUENCY = 440.0 # sine frequency, Hz, may be float
-    DEFAULT_PERIOD = 1 # in seconds, may be float
+    DEFAULT_PERIOD = 0.2 # in seconds, may be float
     DEFAULT_LOOPS = 1 # number of times to play the tone. -1 for infinite
 
+    def generate_sine_wave(self, num_samples, array_type):
+        """Generates a sine wave array of the specified type"""
+        sample_array = np.arange(num_samples, dtype=array_type) #creates a template array
+        sine_array = np.sin(2*np.pi*sample_array*
+            self.frequency/self.sample_rate) #applies sine wave pattern to the array
+        return sine_array
+
+    def make_stereo_tone(self):
+        """Generates a stereo tone compatible with pyaudio"""
+        num_samples = int(round(self.duration*self.sample_rate))    # Sample count
+        audio_wave =  self.generate_sine_wave(num_samples, self.TONE_ARRAY_TYPE)
+        empty_wave = np.zeros(shape=num_samples, dtype=self.TONE_ARRAY_TYPE)
+        left_wave = (audio_wave if self.channel in (self.LEFT_CHANNEL , self.BOTH_CHANNELS)
+            else empty_wave)
+        right_wave = (audio_wave if self.channel in (self.RIGHT_CHANNEL , self.BOTH_CHANNELS)
+            else empty_wave)
+        self.tone = np.ravel([left_wave,right_wave],'F')
+        
     def generate_sine_tone(self):
         """Generates an array that contains values mathing a sine wave"""
         sample_time=1.0/self.sample_rate
@@ -31,18 +49,6 @@ class ToneThread(threading.Thread):
         max_sample = 2**(self.BITS - 1) - 1
         signal = max_sample *self.volume*np.sin(2*np.pi * self.frequency*time_vector)
         return signal
-
-    def make_stereo_tone(self):
-        """Generates a sine wave array which represents the stereo audio tone"""
-        num_samples = int(round( self.duration*self.sample_rate))
-
-        #Stack the left and right waveforms into a stereo array
-        audio_wave =  self.generate_sine_tone()
-        left_wave = audio_wave if self.channel in (self.LEFT_CHANNEL , self.BOTH_CHANNELS)\
-            else np.zeros((num_samples, 1))
-        right_wave = audio_wave if self.channel in (self.RIGHT_CHANNEL , self.BOTH_CHANNELS)\
-            else np.zeros((num_samples, 1))
-        self.tone =  np.column_stack((left_wave, right_wave)).astype(self.TONE_ARRAY_TYPE)
 
     def __init__(self, frequency=DEFAULT_FREQUENCY,
                  rate=DEFAULT_SAMPLE_RATE, period=DEFAULT_PERIOD,
@@ -59,20 +65,24 @@ class ToneThread(threading.Thread):
         self.sleep_between_loops=sleep_between_loops      # Include a pause between tone loops
         self.graph = None
         self.make_stereo_tone()
-        pygame.mixer.init()
+        self.stream = pyaudio.PyAudio().open(
+            format = pyaudio.paFloat32, channels = 2, rate = self.sample_rate, output = True)
 
     def get_duration(self):
         """Returns the duration of the generated tone"""
         return self.duration
 
-    def set_frequency(self, hertz):
-        """Sets the frequency of the generated tone"""
-        self.frequency = int(hertz)
-        self.make_stereo_tone()
+    def get_volume(self):
+        """Returns the current volume of the generated tone"""
+        return self.volume
 
     def set_volume(self, volume):
         """Sets the volume of the generated tone"""
         self.volume = volume
+
+    def set_frequency(self, hertz):
+        """Sets the frequency of the generated tone"""
+        self.frequency = int(hertz)
         self.make_stereo_tone()
 
     def mute(self):
@@ -88,13 +98,14 @@ class ToneThread(threading.Thread):
            'channel' parameter can be ''left', 'right' or 'both'
         """
         self.channel = channel
+        self.make_stereo_tone()
 
     def run(self):
         """Generates the tone and plays it to the default audio device"""
         loop=0
         while not self.stopped and (loop < self.loops or self.loops == -1):
-            sound = pygame.mixer.Sound(self.tone)
-            sound.play()
+            self.stream.write((self.tone * self.volume).tobytes())
+
             if self.loops != -1:
                 loop = loop + 1
             if self.sleep_between_loops:

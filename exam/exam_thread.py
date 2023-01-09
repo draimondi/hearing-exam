@@ -6,8 +6,8 @@ import time
 import numpy
 import tone_generator
 
-INITIAL_VOLUME=0.0002 #Volume at which to start each tone test
-VOLUME_DELTA=0.0002 #Amount to increment the volume until sound is detected
+INITIAL_VOLUME=0.0001 #Volume at which to start each tone test
+VOLUME_DELTA=0.0001 #Amount to increment the volume until sound is detected
 
 class ExamThread(threading.Thread):
     """Class that handles the thread which runs the exam"""
@@ -57,8 +57,8 @@ class ExamThread(threading.Thread):
                       f"Current volume: {self.sound_thread.volume} "
                       f"Current Speaker: {self.sound_thread.channel}")
                 self.sound_thread.run()
-                self.sound_thread.set_volume(round(self.sound_thread.volume + VOLUME_DELTA, 4))
-                time.sleep(self.sound_thread.get_duration())
+                self.sound_thread.set_volume(round(self.sound_thread.volume + VOLUME_DELTA, 5))
+                time.sleep(self.sound_thread.get_duration()/10)
                 if self.sound_detected:
                     self.sound_thread.mute()
                     break
